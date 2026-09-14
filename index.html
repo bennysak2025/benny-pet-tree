@@ -35,5 +35,73 @@ Benny Tree And Pet Shop`,waEnabled:!0,fbLink:"https://m.me/bennytree",fbName:"Be
 </script>
   <script>(function(){function m(a){var h=a.getAttribute("href");if(!h)return;try{var u=new URL(h,document.baseURI);if((u.protocol==="http:"||u.protocol==="https:")&&u.host!==location.host){a.target="_blank";a.rel="noopener noreferrer";}}catch(e){}}function s(){document.querySelectorAll("a[href]").forEach(m);}if(document.readyState!=="loading"){s();}else{document.addEventListener("DOMContentLoaded",s);}document.addEventListener("click",function(e){var a=e.target&&e.target.closest&&e.target.closest("a[href]");if(a){m(a);}},true);})();</script>
   
+
+<script>
+// QUOTA FIX v2 - Store URLs not base64
+(function(){
+  const SUPABASE_URL = 'https://fbfglzkibxhxfhmyspqe.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZiZmdsemtpYnhoeGZobXlzcHFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0OTE2MzMsImV4cCI6MjEwMzA2NzYzM30.04guOvvtQ-VqJ_1DrUdRWqXzY9kqhsHFI8Tanau2JQw';
+  let sb=null;
+  try{ if(window.supabase) sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY); }catch(e){}
+
+  async function resizeAndUpload(file){
+    try{
+      const resizedBlob = await new Promise(res=>{
+        const img=new Image();
+        img.onload=()=>{
+          let w=img.width,h=img.height;
+          const max=800;
+          if(w>max || h>max){ if(w>h){ h=h*max/w; w=max; } else { w=w*max/h; h=max; } }
+          const c=document.createElement('canvas'); c.width=w; c.height=h;
+          c.getContext('2d').drawImage(img,0,0,w,h);
+          c.toBlob(b=>res(b),'image/jpeg',0.7);
+        };
+        img.onerror=()=>res(file);
+        img.src=URL.createObjectURL(file);
+      });
+      const blob=resizedBlob||file;
+      const name='banner_'+Date.now()+'_'+Math.random().toString(36).slice(2)+'.jpg';
+      if(!sb) return null;
+      const {error}=await sb.storage.from('benny-media').upload(name,blob);
+      if(error){ console.log(error); return null; }
+      const {data}=sb.storage.from('benny-media').getPublicUrl(name);
+      return data.publicUrl;
+    }catch(e){ console.log(e); return null; }
+  }
+  window.bennyUploadToSupabase = resizeAndUpload;
+
+  const origSetItem = Storage.prototype.setItem;
+  Storage.prototype.setItem = function(k,v){
+    try{ return origSetItem.call(this,k,v); }
+    catch(e){
+      if(e.name==='QuotaExceededError' || (e.message&&e.message.toLowerCase().includes('quota'))){
+        console.warn('Quota exceeded, cleaning base64');
+        try{
+          let obj=JSON.parse(v);
+          // Strip all base64 images
+          let str=JSON.stringify(obj);
+          // Replace data:image base64 with empty
+          str=str.replace(/"data:image[^"]+"/g,'""');
+          str=str.replace(/data:image\/[^;]+;base64,[^"']+/g,'');
+          const cleaned=JSON.parse(str);
+          // Keep only first image per product
+          if(cleaned.products) cleaned.products.forEach(p=>{ if(p.images && Array.isArray(p.images)) p.images=p.images.filter(i=>i && !i.startsWith('data:')).slice(0,2); });
+          if(cleaned.banners) cleaned.banners.forEach(b=>{ if(b.image && b.image.startsWith('data:')) b.image=''; });
+          const small=JSON.stringify(cleaned);
+          // Try clear old keys
+          try{ localStorage.removeItem('benny_cms_data_v32'); localStorage.removeItem('benny_cms_data'); }catch(_){}
+          return origSetItem.call(this,k,small);
+        }catch(e2){
+          alert('ພື້ນທີ່ເຕັມ! ກຳລັງລ້າງຂໍ້ມູນເກົ່າ... ກະລຸນາອັບຮູບໃໝ່ทีละรูป');
+          localStorage.clear();
+          try{ return origSetItem.call(this,k,v.slice(0,1000000)); }catch(e3){ throw e; }
+        }
+      } else throw e;
+    }
+  };
+  console.log('Quota fix v2 loaded');
+})();
+</script>
 </body>
+
 </html>
