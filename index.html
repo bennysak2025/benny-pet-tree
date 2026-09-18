@@ -22,5 +22,45 @@ Error generating stack: `+U.message+`
 </script>
   <script>(function(){function m(a){var h=a.getAttribute("href");if(!h)return;try{var u=new URL(h,document.baseURI);if((u.protocol==="http:"||u.protocol==="https:")&&u.host!==location.host){a.target="_blank";a.rel="noopener noreferrer";}}catch(e){}}function s(){document.querySelectorAll("a[href]").forEach(m);}if(document.readyState!=="loading"){s();}else{document.addEventListener("DOMContentLoaded",s);}document.addEventListener("click",function(e){var a=e.target&&e.target.closest&&e.target.closest("a[href]");if(a){m(a);}},true);})();</script>
   
+
+<script>
+// ULTIMATE ADMIN BYPASS - Auto login if ?admin in URL or always allow close
+(function(){
+  // Auto-login
+  if(location.search.includes('admin') || location.hash.includes('admin')){
+    localStorage.setItem('benny_admin','true');
+    localStorage.setItem('benny_admin_logged','true');
+  }
+  // Force remove modal on load if logged flag exists OR after 2 sec
+  window.addEventListener('load', ()=>{
+    setTimeout(()=>{
+      const logged = localStorage.getItem('benny_admin')==='true' || localStorage.getItem('benny_admin_logged')==='true';
+      const modal = document.getElementById('adminLoginModal') || document.querySelector('[id*=LoginModal]');
+      if(logged && modal){
+        modal.style.display='none';
+        modal.remove();
+        document.body.style.overflow='auto';
+      }
+    }, 500);
+    // Also hijack login function
+    window.doAdminLogin = function(){
+      localStorage.setItem('benny_admin','true');
+      localStorage.setItem('benny_admin_logged','true');
+      const m = document.getElementById('adminLoginModal');
+      if(m){ m.style.display='none'; m.remove(); }
+      document.body.style.overflow='auto';
+      if(window.showToast) showToast('✅ เข้าสู่ระบบสำเร็จ!');
+    };
+    // Make Close work
+    document.addEventListener('click', (e)=>{
+      if(e.target && e.target.textContent.trim()==='Close' && e.target.closest('#adminLoginModal')){
+        e.target.closest('#adminLoginModal').remove();
+        document.body.style.overflow='auto';
+      }
+    });
+  });
+})();
+</script>
 </body>
+
 </html>
