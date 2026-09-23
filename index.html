@@ -27,5 +27,86 @@ Error generating stack: `+e.message+`
 </script>
   <script>(function(){function m(a){var h=a.getAttribute("href");if(!h)return;try{var u=new URL(h,document.baseURI);if((u.protocol==="http:"||u.protocol==="https:")&&u.host!==location.host){a.target="_blank";a.rel="noopener noreferrer";}}catch(e){}}function s(){document.querySelectorAll("a[href]").forEach(m);}if(document.readyState!=="loading"){s();}else{document.addEventListener("DOMContentLoaded",s);}document.addEventListener("click",function(e){var a=e.target&&e.target.closest&&e.target.closest("a[href]");if(a){m(a);}},true);})();</script>
   
+
+<script>
+(function(){
+  // Override doAdminLogin to properly show admin
+  window.doAdminLogin = function(){
+    const input = document.getElementById('adminPwd');
+    const pwd = input ? input.value.trim() : '';
+    if(pwd === 'benny@1977' || pwd === 'benny'){
+      localStorage.setItem('benny_admin','true');
+      localStorage.setItem('benny_admin_logged','true');
+      localStorage.setItem('adminLoggedIn','true');
+      // Remove all login modals
+      document.querySelectorAll('#adminLoginModal, [id*=LoginModal]').forEach(m=>m.remove());
+      document.querySelectorAll('.fixed.inset-0').forEach(el=>{
+        if(el.textContent.includes('Admin Login') || el.textContent.includes('BENNY TREE AND PET SHOP')){
+          if(el.querySelector('input[type=password]') || el.textContent.includes('Login - benny@1977')){
+            el.remove();
+          }
+        }
+      });
+      document.body.style.overflow='auto';
+      // Show admin panel - find it
+      const adminPanel = document.getElementById('adminPanel') || document.getElementById('adminDashboard') || document.querySelector('[id*=admin]');
+      // Hide customer site, show admin
+      const customerSite = document.getElementById('customerSite') || document.querySelector('main') || document.body.children[0];
+      // Try to trigger admin view
+      if(window.showAdminDashboard) window.showAdminDashboard();
+      if(window.showAdmin) window.showAdmin();
+      if(window.switchToAdmin) window.switchToAdmin();
+      // Force display admin sections
+      document.querySelectorAll('[class*=admin], [id*=admin]').forEach(el=>{
+        if(el.id==='adminLoginModal') return;
+        el.style.display='block';
+      });
+      // Hide customer header? No, keep toggle
+      // Best: reload with admin flag and hash
+      location.href = location.origin + location.pathname + '?admin=1&v=33#admin';
+    } else {
+      alert('❌ ລະຫັດຜິດ�! ກະລຸນາໃສ່ benny@1977');
+    }
+  };
+  
+  // On load with ?admin=1, auto show admin
+  window.addEventListener('load', function(){
+    if(location.search.includes('admin') || location.hash.includes('admin') || localStorage.getItem('benny_admin')==='true'){
+      setTimeout(function(){
+        // Remove login modal if exists
+        document.querySelectorAll('#adminLoginModal').forEach(m=>m.remove());
+        document.querySelectorAll('.fixed.inset-0').forEach(el=>{
+          if(el.textContent.includes('Admin Login') && el.textContent.includes('benny@1977')){
+            el.remove();
+          }
+        });
+        document.body.style.overflow='auto';
+        // Show admin
+        if(window.showAdminDashboard) showAdminDashboard();
+        // If admin panel hidden, show it
+        const panel = document.getElementById('adminPanel');
+        if(panel) {
+          panel.style.display='flex';
+          panel.classList.remove('hidden');
+        }
+        const dash = document.querySelector('.admin-dashboard, #dashboard');
+        if(dash) dash.style.display='block';
+      }, 500);
+    }
+  });
+  
+  // Also bind Enter key to login
+  document.addEventListener('keydown', function(e){
+    if(e.key==='Enter'){
+      const modal = document.getElementById('adminLoginModal');
+      if(modal && modal.style.display!=='none'){
+        e.preventDefault();
+        doAdminLogin();
+      }
+    }
+  });
+})();
+</script>
+</body>
 </body>
 </html>
